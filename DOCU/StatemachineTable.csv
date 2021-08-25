@@ -1,0 +1,24 @@
+Mode Nr.,status,Exit condition,Next status,Identification
+1,Initialization „homeclose“,"Flash Version on display,
+start counter on robots,
+Lid closes until homing switch is reached for a defined init phase. At starting position loadcell is set to 0.",2,
+2,Closed,"- when one of the robots leaves its parking position (they might be programmed that way), ",3,Variable „manual mode is off“
+,Closed,- Button UP is pressed for 1/3s,3,Variable manual mode is on
+,Closed,"- whent the FIRE (red) Button is pressed, the robot Roomba (vacuum) should be release automatically.  ",9,Red Button is  pressed long time.
+3,Opening,Door opens with 100 steps each interval to measure the weight on the door. ,4,Steps reached MAXSTEP limit
+,,Button down is pressed,6,"None, only mode 6 activated"
+,,Weight limit is reached – on opening it should be stopped as long as the limit is over this threshold. ,7,MAXPWR is reached 
+4,Open,Both robots are in parking position – countdown to 0 to then close the door in automatic mode ,5,Manual mode is off (either by RED button switch or a robot is gone (ROBIGONE = HIGH)
+,,Button down is pressed for 1/3s,5,
+,,Vacuum robot start by solenoid,4,Setfire is HIGH
+5,closing,Door closes with 100 steps each interval to measure the weight on the door. 6000 steps = 60 measurements.,2,BOTH conditions trigger: - steps reached 0 - Homing switch reached.
+,closing,Weight limit is reached,8,
+,closing,Button up is pressed,6,"None, only mode 6."
+6,Stop and  manual mode,Button up- drives door up NO weight limit in this mode. Until: MAXSTEPS reached,4,Manualmode == HIGH
+,,Button down drives door down  NO weight limit in this mode. Until: mysteps gone to 0 or Home SWITCH has reached.,2,Manualmode== HIGH
+7,Error on open,It should be retried to open when weight is a bit below MAXPWR. Someone might just stood before the door and blocked it accidentally.,3,
+8,Error on close,"No retry, just switch to manual mode. (Might be extended later)- we don‘t want to harm the cat...",6,
+9,Start sequence Roomba ,"As long as RED Button is pressed, a counter counts up to 12 and shows „HOLD FIRE“ on the display.
+Counter is below 12",2,
+,,"As long as RED Button is pressed, a counter counts up to 12 and shows „HOLD FIRE“ on the display.
+Counter reached 12",3,SETFIRE is set to HIGH
