@@ -13,7 +13,7 @@
  Author: Sandro Antenori
   
 31.12.2021 --> GITHUB inclusion
-                                      
+ 2.01.2022  --> remove solenoid function                                      
  */
 
 
@@ -46,8 +46,8 @@ void showDisplay();                    // a refresh on the display in one functi
 
 boolean manualmode = LOW;
 boolean robigone = LOW;
-boolean setfire = LOW;    //Status for launch of vaccum robot
-int count = 0;
+//boolean setfire = LOW;    //Status for launch of vaccum robot
+//int count = 0;
 const int LOADCELL_DOUT_PIN = 12;   //weiss
 const int LOADCELL_SCK_PIN = 13;    //blau
 const long LOADCELL_OFFSET = 20000;
@@ -93,12 +93,12 @@ void setup()   {
   pinMode(BTN_UP, INPUT_PULLUP);    // großer Schalter hoch
   pinMode(BTN_DOWN, INPUT_PULLUP);  //großer Schalter runter
                                     //andere Schalter sind Teil von myRobo..
-  pinMode(BTN_FIRE, INPUT_PULLUP);  //roter Taster neben Display
+  //pinMode(BTN_FIRE, INPUT_PULLUP);  //roter Taster neben Display
   pinMode(REL1, OUTPUT);            //REL1 enables Power supply for stepper motors and solenoid source
-  pinMode(REL2, OUTPUT);            //REL2 is the switch for the solenoid to turn on (needs REL1 for power)
+  //pinMode(REL2, OUTPUT);            //REL2 is the switch for the solenoid to turn on (needs REL1 for power)
 
   digitalWrite(REL1,LOW);           //zuerst einschalten, hoomeclose geht ja gleich los..!
-  digitalWrite(REL2,HIGH);          //REL2 SOLENOID FInger OFF
+  //digitalWrite(REL2,HIGH);          //REL2 SOLENOID FInger OFF
  
   // setup Display ======= WELCOME screen ============
   display.begin(SSD1306_SWITCHCAPVCC, 60); 
@@ -106,7 +106,7 @@ void setup()   {
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(30,10);
-  display.println("MKL V2.1"); 
+  display.println("MKL V3.0 "); 
   display.display();  
   delay(100);
 
@@ -199,6 +199,7 @@ void loop() {
   switch (Maschinenstatus){  
   case 2: //Klappe zu - Display zeigen- TODO
     digitalWrite(REL1,HIGH);  // Power Supply ausschalten
+    loadcell.tare();
     reading = PWR_OFFSET + loadcell.get_units(4);
     showDisplay();
     //delay(50); //blockiert eh eine Zeit, sollte reichen um hier nicht zu schnell zu sein
@@ -209,10 +210,11 @@ void loop() {
         digitalWrite(REL1,LOW);  // Power Supply einschalten
         delay(BTNTIME);
     }
-    if (digitalRead(BTN_FIRE) == 0){
-        Maschinenstatus = 9;
-        break;
-    }
+//    Version 3.X -- no solenoid any more for start
+//    if (digitalRead(BTN_FIRE) == 0){
+//        Maschinenstatus = 9;
+//        break;
+//    }
     if (robigone == HIGH){
       Maschinenstatus = 3; //Trigger falls ein Robi wegfährt
       digitalWrite(REL1,LOW);  // Power Supply einschalten
@@ -255,21 +257,21 @@ void loop() {
     reading = PWR_OFFSET + loadcell.get_units(4);
 
     showDisplay();
-    if ((setfire == HIGH)||(digitalRead(BTN_FIRE) == 0)){
-       countdown = 120;
-       digitalWrite(REL1,LOW); //sollte ja noch an sein..
-       //Serial.println("Setfire HIGH -- starte Robbi!"); //eigener Modus 10 um von dort in Ruhe den Saugrobbi zu starten und andere Interaktionen zu blockieren.
-       digitalWrite(REL2,LOW); //Solenoid Finger AN!!
-       delay(1000);
-       digitalWrite(REL2,HIGH); //Solenoid Finger AUSN!!
-       delay(500);
-       digitalWrite(REL2,LOW); //Solenoid Finger AN!!
-       delay(1000);
-       digitalWrite(REL2,HIGH); //Solenoid Finger AUSN!!
-      
-       
-       setfire = LOW;
-    }
+//    if ((setfire == HIGH)||(digitalRead(BTN_FIRE) == 0)){
+//       countdown = 120;
+//       digitalWrite(REL1,LOW); //sollte ja noch an sein..
+//       //Serial.println("Setfire HIGH -- starte Robbi!"); //eigener Modus 10 um von dort in Ruhe den Saugrobbi zu starten und andere Interaktionen zu blockieren.
+//       digitalWrite(REL2,LOW); //Solenoid Finger AN!!
+//       delay(1000);
+//       digitalWrite(REL2,HIGH); //Solenoid Finger AUSN!!
+//       delay(500);
+//       digitalWrite(REL2,LOW); //Solenoid Finger AN!!
+//       delay(1000);
+//       digitalWrite(REL2,HIGH); //Solenoid Finger AUSN!!
+//      
+//       
+//       setfire = LOW;
+//    }
     digitalWrite(REL1,HIGH);  // Power Supply ausschalten-- nach FIRE...
     while (digitalRead(BTN_DOWN) == 0){
         robigone = LOW;  //Fake setzen, sodass Tür nicht wieder nach Schliessen wieder hochgeht
@@ -374,36 +376,36 @@ void loop() {
   case 8: //Error in close, einfach stoppen
     Maschinenstatus = 6;
     break;
-  case 9: 
-     //Serial.print("Mode 9!");
-     count = 0;
-     if (digitalRead(BTN_FIRE) == 0){
-        display.clearDisplay();
-        display.setCursor(1,4);
-        display.println("HOLD FIRE!!");
-        display.drawRect(7,41, 84+1, 12, SSD1306_WHITE); 
-     }    
-     while (digitalRead(BTN_FIRE) == 0){  //FIRE is ON at 0
-        Maschinenstatus = 1;
-        count++;
-        if (count <=12){
-           display.fillRect(8,42, count*7, 10, SSD1306_WHITE);
-           display.display();
-           //Serial.print("Mode 9! -count: ");
-           //Serial.println(count);          
-        }
-        else{
-           delay(100);
-           Maschinenstatus = 3;
-           setfire = HIGH;
-           //Serial.print("Switch to Mode 3! -count: ");
-           //Serial.println(count); 
-           digitalWrite(REL1,LOW);
-           break;
-        }
-     }
-     if (count <= 12) Maschinenstatus=2;
-     break;
+//  case 9: 
+//     //Serial.print("Mode 9!");
+//     count = 0;
+//     if (digitalRead(BTN_FIRE) == 0){
+//        display.clearDisplay();
+//        display.setCursor(1,4);
+//        display.println("HOLD FIRE!!");
+//        display.drawRect(7,41, 84+1, 12, SSD1306_WHITE); 
+//     }    
+//     while (digitalRead(BTN_FIRE) == 0){  //FIRE is ON at 0
+//        Maschinenstatus = 1;
+//        count++;
+//        if (count <=12){
+//           display.fillRect(8,42, count*7, 10, SSD1306_WHITE);
+//           display.display();
+//           //Serial.print("Mode 9! -count: ");
+//           //Serial.println(count);          
+//        }
+//        else{
+//           delay(100);
+//           Maschinenstatus = 3;
+//           setfire = HIGH;
+//           //Serial.print("Switch to Mode 3! -count: ");
+//           //Serial.println(count); 
+//           digitalWrite(REL1,LOW);
+//           break;
+//        }
+//     }
+//     if (count <= 12) Maschinenstatus=2;
+//     break;
 
   default:
     //Serial.print("default Mode:");
