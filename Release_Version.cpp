@@ -13,7 +13,6 @@
  Author: Sandro Antenori
   
 31.12.2021 --> GITHUB inclusion
-                                      
  */
 
 
@@ -53,7 +52,7 @@ const int LOADCELL_SCK_PIN = 13;    //blau
 const long LOADCELL_OFFSET = 20000;
 const long PWR_OFFSET = 5000;
 const long LOADCELL_DIVIDER = 500;
-const long MAX_PWR = 4200;
+const long MAX_PWR = 3800;
 const long BTNTIME = 200;
 //const long MAXTIME = 35999; //10h Maximale Zeit als Indikator - 9:59:59
 
@@ -349,19 +348,21 @@ void loop() {
          mysteps = MMklappe1.readstepcount();
       }
 
+
+
+
+
       if (mysteps == 0){
         manualmode = LOW;
         Maschinenstatus=2;
       }
     }// statements
-  
-  if (digitalRead(SWTCH_HOME) == 0){
+	if (digitalRead(SWTCH_HOME) == 0){
     //if ((digitalRead(SWTCH_HOME) == 0) && (digitalRead(BTN_FIRE) == 0)){  
         MMklappe1.setstepcount(0); //mysteps=0;
         manualmode = LOW;
         Maschinenstatus=2;
     }
-
     break;
   case 7: //Error in open - 5 Versuche 
     reading = PWR_OFFSET + loadcell.get_units(4);

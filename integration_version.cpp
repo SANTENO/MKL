@@ -12,10 +12,9 @@
  user interface.
  Author: Sandro Antenori
   
-31.12.2021 --> GITHUB inclusion
-                                      
+ *2.1--> transfer stuff into 2 libraries
+ *2.2 --> Modify mode 6 to stay endless with output of position and weight
  */
-
 
 
 #include "Wire.h"               //I2C interface 
@@ -53,7 +52,7 @@ const int LOADCELL_SCK_PIN = 13;    //blau
 const long LOADCELL_OFFSET = 20000;
 const long PWR_OFFSET = 5000;
 const long LOADCELL_DIVIDER = 500;
-const long MAX_PWR = 4200;
+const long MAX_PWR = 3800;
 const long BTNTIME = 200;
 //const long MAXTIME = 35999; //10h Maximale Zeit als Indikator - 9:59:59
 
@@ -340,7 +339,7 @@ void loop() {
       }
     }
   
-  //down manual as long as SWITCH_HOME is not on 
+   //down manual as long as SWITCH_HOME is not on 
    //while (digitalRead(BTN_DOWN) == 0){                    //RUNTERFAHREN bei gedrückten Schalter
    while  ((digitalRead(BTN_DOWN) == 0)  && (digitalRead(SWTCH_HOME) == 1)){
       if ((mysteps >0) && (digitalRead(SWTCH_HOME) == 1)) 
@@ -348,14 +347,13 @@ void loop() {
          MMklappe1.stepdrive(CLOSE);    
          mysteps = MMklappe1.readstepcount();
       }
-
       if (mysteps == 0){
         manualmode = LOW;
-        Maschinenstatus=2;
+        Maschinenstatus=2;     //later set to 2 as default
       }
     }// statements
-  
-  if (digitalRead(SWTCH_HOME) == 0){
+    
+    if (digitalRead(SWTCH_HOME) == 0){
     //if ((digitalRead(SWTCH_HOME) == 0) && (digitalRead(BTN_FIRE) == 0)){  
         MMklappe1.setstepcount(0); //mysteps=0;
         manualmode = LOW;
@@ -363,15 +361,15 @@ void loop() {
     }
 
     break;
-  case 7: //Error in open - 5 Versuche 
+  case 7: //Error in open 
     reading = PWR_OFFSET + loadcell.get_units(4);
     showDisplay();
-    if (reading > PWR_OFFSET - MAX_PWR){
+    if (reading > PWR_OFFSET - MAX_PWR ){
        //recovery 
       Maschinenstatus = 3; 
     }
     break;
-  case 8: //Error in close, einfach stoppen
+  case 8: //Error in close, einfach stoppen, nicht das der Tiger manuell entfernt werden muss
     Maschinenstatus = 6;
     break;
   case 9: 
