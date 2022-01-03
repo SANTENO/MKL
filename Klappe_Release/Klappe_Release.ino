@@ -13,7 +13,7 @@
  Author: Sandro Antenori
   
 31.12.2021 --> GITHUB inclusion
- 2.01.2022  --> remove solenoid function                                      
+ 2.01.2022  --> remove solenoid function that is V3.X now extra branch                                     
  */
 
 
@@ -197,34 +197,29 @@ void showDisplay(){
 void loop() {
   curMillis = millis();  
   switch (Maschinenstatus){  
-  case 2: //Klappe zu - Display zeigen- TODO
-    digitalWrite(REL1,HIGH);  // Power Supply ausschalten
-    loadcell.tare();
+  case 2:       // Lid closed   
+    digitalWrite(REL1,HIGH);  //switch off Power Supply 
+    loadcell.tare();          //Issue#1: MKL: Calibration in idle mode 
     reading = PWR_OFFSET + loadcell.get_units(4);
     showDisplay();
-    //delay(50); //blockiert eh eine Zeit, sollte reichen um hier nicht zu schnell zu sein
+    //manual open:
     while (digitalRead(BTN_UP) == 0){
         Maschinenstatus = 3;
         manualmode = HIGH;  
-        //loadcell.power_up();
         digitalWrite(REL1,LOW);  // Power Supply einschalten
         delay(BTNTIME);
     }
-//    Version 3.X -- no solenoid any more for start
-//    if (digitalRead(BTN_FIRE) == 0){
-//        Maschinenstatus = 9;
-//        break;
-//    }
+    //automatic open:
     if (robigone == HIGH){
       Maschinenstatus = 3; //Trigger falls ein Robi wegfährt
       digitalWrite(REL1,LOW);  // Power Supply einschalten
       delay(BTNTIME);
     }
-    countdown = 120; // erst nach dem vollstaendigen Schliessen wird Countdown wieder ermoeglicht
+    countdown = 120;    // countdown reset - for use in mode 4
     break;
   case 3: //OPENING
      mysteps = MMklappe1.readstepcount();
-     while (digitalRead(BTN_DOWN) == 0){ //Manuell entgegengedrueckt gegen oeffnen
+     while (digitalRead(BTN_DOWN) == 0){    //Pressing down while lid goes up --> swtich to manual operation mode (6)
        Maschinenstatus=6;
        break;
      }
@@ -232,11 +227,11 @@ void loop() {
          iteration = MAXSTEP - mysteps;
      }
      for (int i=0; i < iteration; i++){
-      delayMicroseconds(500);
+      delayMicroseconds(290);                      //Issue#4
       MMklappe1.stepdrive(OPEN);
      } 
      mysteps = MMklappe1.readstepcount(); 
-     if ((curMillis - prevMillis_hx711) >= 100) {
+     if ((curMillis - prevMillis_hx711) >= 500) {  //Issue#4
       prevMillis_hx711 = curMillis;
         reading = PWR_OFFSET + loadcell.get_units(2);
 
@@ -302,7 +297,7 @@ void loop() {
          iteration = mysteps;
      }
      for (int i=0; i < iteration; i++){
-      delayMicroseconds(500);
+      delayMicroseconds(310);                     //Issue#4
       MMklappe1.stepdrive(CLOSE);
      } 
      //homing switch kann ja ansprechen, also hier auf Null setzen!
@@ -312,7 +307,7 @@ void loop() {
       }     
      mysteps = MMklappe1.readstepcount(); 
      
-     if ((curMillis - prevMillis_hx711) >= 100) {
+     if ((curMillis - prevMillis_hx711) >= 500) {  //Issue#4
       prevMillis_hx711 = curMillis;
         reading = PWR_OFFSET + loadcell.get_units(2);
         //Serial.print(mysteps, DEC);
