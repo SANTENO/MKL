@@ -38,7 +38,8 @@ void showDisplay();                    // a refresh on the display in one functi
 #define BTN_DOWN 3
 #define REL1 5
 #define REL2 11
-#define BTN_FIRE 10
+#define BTN_FIRE 10    //Issue#5
+
 
 #define OPEN HIGH
 #define CLOSE LOW
@@ -47,6 +48,7 @@ void showDisplay();                    // a refresh on the display in one functi
 boolean manualmode = LOW;
 boolean robigone = LOW;
 //boolean setfire = LOW;    //Status for launch of vaccum robot
+boolean display_on = HIGH;   //Status for display, leave to ON by default
 //int count = 0;
 const int LOADCELL_DOUT_PIN = 12;   //weiss
 const int LOADCELL_SCK_PIN = 13;    //blau
@@ -93,7 +95,8 @@ void setup()   {
   pinMode(BTN_UP, INPUT_PULLUP);    // großer Schalter hoch
   pinMode(BTN_DOWN, INPUT_PULLUP);  //großer Schalter runter
                                     //andere Schalter sind Teil von myRobo..
-  //pinMode(BTN_FIRE, INPUT_PULLUP);  //roter Taster neben Display
+  pinMode(BTN_FIRE, INPUT_PULLUP);  //red Button next to display//Issue#5
+  
   pinMode(REL1, OUTPUT);            //REL1 enables Power supply for stepper motors and solenoid source
   //pinMode(REL2, OUTPUT);            //REL2 is the switch for the solenoid to turn on (needs REL1 for power)
 
@@ -138,7 +141,13 @@ void homeclose(){
 }
 
 //besorgt aktuelle Daten und gibt Sie auf dem Display aus.
-void showDisplay(){
+void showDisplay(){   
+    //Issue#5
+    while ((digitalRead(BTN_FIRE) == 0)){
+      //button is pressed --> invert the display_ON status
+      display_on = !display_on;
+    }
+    if (display_on == HIGH){ 
        display.clearDisplay();
        display.setCursor(1,4);
        display.print("M");
@@ -154,8 +163,8 @@ void showDisplay(){
        }
        display.print(" ");
        display.print(mysteps); 
-       display.print("|");
-       display.println(reading);
+       //display.print("|");
+       //display.println(reading);
        
        // ====SAUGrobbi=====:
        display.setCursor(1,15); 
@@ -174,7 +183,6 @@ void showDisplay(){
        display.print(" h:");
        display.println(Saughigh);
        
-       
        //====Wischrobbi========:
        display.setCursor(1,36); 
        display.print("Consuela:");
@@ -190,6 +198,11 @@ void showDisplay(){
        display.print("l:");  display.print(Wischlast);
        display.print(" h:"); display.println(Wischhigh);       
        display.display();
+    }   //display_on == HIGH  //Issue#5
+    else {
+      display.clearDisplay();
+      display.display();     
+    }
 }
 
 
@@ -235,10 +248,10 @@ void loop() {
       prevMillis_hx711 = curMillis;
         reading = PWR_OFFSET + loadcell.get_units(2);
 
-        Serial.print("open:\t");
+        /*Serial.print("open:\t");
         Serial.print(mysteps, DEC);
         Serial.print("\t");
-        Serial.println(reading, DEC);
+        Serial.println(reading, DEC);*/
       }
       if (reading < PWR_OFFSET - MAX_PWR){  // umgekehrte Logik, reading geht von PWR_OFFSET runter bis 1600
         //Serial.println("Klemmschutz!!");
