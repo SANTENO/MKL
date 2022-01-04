@@ -143,7 +143,7 @@ void homeclose(){
 //besorgt aktuelle Daten und gibt Sie auf dem Display aus.
 void showDisplay(){   
     //Issue#5
-    while ((digitalRead(BTN_FIRE) == 0)){
+    if ((digitalRead(BTN_FIRE) == 0)){
       //button is pressed --> invert the display_ON status
       display_on = !display_on;
     }
@@ -163,9 +163,10 @@ void showDisplay(){
        }
        display.print(" ");
        display.print(mysteps); 
-       //display.print("|");
-       //display.println(reading);
-       
+       if (countdown > 120){
+         display.print("|");        //issue#7
+         display.println(countdown);
+       }
        // ====SAUGrobbi=====:
        display.setCursor(1,15); 
        display.print("Saugi: ");
@@ -218,17 +219,18 @@ void loop() {
     //manual open:
     while (digitalRead(BTN_UP) == 0){
         Maschinenstatus = 3;
-        manualmode = HIGH;  
+        //manualmode = HIGH; 
         digitalWrite(REL1,LOW);  // Power Supply einschalten
         delay(BTNTIME);
+        countdown = 120*20;    // 120 is ~35seconds * 20 ~ 10 minutes Isuse#7 countdown reset
     }
     //automatic open:
     if (robigone == HIGH){
       Maschinenstatus = 3; //Trigger falls ein Robi wegfährt
       digitalWrite(REL1,LOW);  // Power Supply einschalten
       delay(BTNTIME);
+      countdown = 120;    // countdown reset - for use in mode 4
     }
-    countdown = 120;    // countdown reset - for use in mode 4
     break;
   case 3: //OPENING
      mysteps = MMklappe1.readstepcount();
@@ -253,7 +255,7 @@ void loop() {
         Serial.print("\t");
         Serial.println(reading, DEC);*/
       }
-      if (reading < PWR_OFFSET - MAX_PWR){  // umgekehrte Logik, reading geht von PWR_OFFSET runter bis 1600
+      if (reading < PWR_OFFSET - MAX_PWR){  // umgekehrte Logik, reading geht von PWR_OFFSET runter bis PWR_OFFSET - MAXPWR
         //Serial.println("Klemmschutz!!");
         Maschinenstatus=7;
       }
@@ -262,7 +264,7 @@ void loop() {
       }
       break;
   case 4:  //OPEN
-    reading = PWR_OFFSET + loadcell.get_units(4);
+    //reading = PWR_OFFSET + loadcell.get_units(4);
 
     showDisplay();
 //    if ((setfire == HIGH)||(digitalRead(BTN_FIRE) == 0)){
@@ -281,6 +283,7 @@ void loop() {
 //       setfire = LOW;
 //    }
     digitalWrite(REL1,HIGH);  // Power Supply ausschalten-- nach FIRE...
+    // manual close lid
     while (digitalRead(BTN_DOWN) == 0){
         robigone = LOW;  //Fake setzen, sodass Tür nicht wieder nach Schliessen wieder hochgeht
         Maschinenstatus = 5;
@@ -288,10 +291,12 @@ void loop() {
         delay(BTNTIME);
         manualmode = LOW;
     }
+    
     if ((robiSaug.readparked() == 1) && (robiWisch.readparked() == 1)){
       countdown--;
       robigone = LOW;
     }
+    
     if ((countdown <=0) && manualmode == LOW){
       Maschinenstatus = 5;
       digitalWrite(REL1,LOW);  // Power Supply einschalten
@@ -367,13 +372,14 @@ void loop() {
   
   if (digitalRead(SWTCH_HOME) == 0){
     //if ((digitalRead(SWTCH_HOME) == 0) && (digitalRead(BTN_FIRE) == 0)){  
-        MMklappe1.setstepcount(0); //mysteps=0;
+        MMklappe1.setstepcount(0); 
+        mysteps=0;                      //Issue#6
         manualmode = LOW;
         Maschinenstatus=2;
     }
 
     break;
-  case 7: //Error in open - 5 Versuche 
+  case 7: //Error in open - just continue open if blockage is gone 
     reading = PWR_OFFSET + loadcell.get_units(4);
     showDisplay();
     if (reading > PWR_OFFSET - MAX_PWR){
@@ -381,7 +387,7 @@ void loop() {
       Maschinenstatus = 3; 
     }
     break;
-  case 8: //Error in close, einfach stoppen
+  case 8: //Error in close just stop it and switch to manual mode - nobody should get hurt!
     Maschinenstatus = 6;
     break;
 //  case 9: 
@@ -421,7 +427,7 @@ void loop() {
   break;
   }
 
-  Serial.println(Maschinenstatus);
+  //Serial.println(Maschinenstatus);
   
     if (robiSaug.readparked() == robiSaug.readnewparkpin())
     {
@@ -433,7 +439,10 @@ void loop() {
       countdown = 120;
       robiSaug.setpark(robiSaug.readnewparkpin());
       //Serial.println("Robi_Saug changed");
-      if (robiSaug.readparked()== LOW) robigone= HIGH;
+      if (robiSaug.readparked()== LOW) {
+        robigone= HIGH;
+        countdown = 120;    // //Issue#7 
+      }
       sint(Sauglast,robiSaug.readruntimesec_last());
       sint(Saughigh,robiSaug.readruntimesec_high());
       
@@ -448,7 +457,10 @@ void loop() {
       //set parked...
       countdown = 120; // Reset countdown 
       robiWisch.setpark(robiWisch.readnewparkpin());
-      if (robiWisch.readparked()== LOW) robigone= HIGH;
+      if (robiWisch.readparked()== LOW) {
+        robigone= HIGH;
+        countdown = 120;    //Issue#7
+      }
       //Serial.println("RobiWisch changed");
       sint(Wischlast,robiWisch.readruntimesec_last());
       sint(Wischhigh,robiWisch.readruntimesec_high());
