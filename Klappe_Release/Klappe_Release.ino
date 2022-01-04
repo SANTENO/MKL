@@ -17,7 +17,7 @@
  */
 
 
-
+#include "Watchdog.h"           //Arduino watchdog timer for system reset //Issue#8
 #include "Wire.h"               //I2C interface 
 #include "Adafruit_SSD1306.h"   //OLED DISPLAY - quite large 
 #include "HX711.h"              //loadcell control
@@ -85,7 +85,7 @@ Adafruit_SSD1306 display(4);
 MyMOTO MMklappe1(8,6,9,7);  
 Robotracker robiSaug(A0);
 Robotracker robiWisch(A1);
-
+Watchdog MyDog;                    //Issue#8
 
 void setup()   {
   Serial.begin(38400);
@@ -124,7 +124,9 @@ void setup()   {
   mysteps = 0;   //Nullstellung
   MMklappe1.setstepcount(0); 
   //Voila - alles initialisiert, Klappe geschlossen und Kalibriert.
-  Maschinenstatus = 2; 
+  Maschinenstatus = 2;
+
+  MyDog.enable(Watchdog::TIMEOUT_8S);
 }
 
 void homeclose(){
@@ -344,9 +346,10 @@ void loop() {
     manualmode = HIGH;
     showDisplay();
     // Rauffahren manuell  
-   
+    
     while ((digitalRead(BTN_UP) == 0)  )   { //Hochfahren bei gedrücktem Schalter
       mysteps = MMklappe1.readstepcount();
+      MyDog.reset();
       if (mysteps <= MAXSTEP){
          MMklappe1.stepdrive(OPEN); 
       }
@@ -358,6 +361,7 @@ void loop() {
   //down manual as long as SWITCH_HOME is not on 
    //while (digitalRead(BTN_DOWN) == 0){                    //RUNTERFAHREN bei gedrückten Schalter
    while  ((digitalRead(BTN_DOWN) == 0)  && (digitalRead(SWTCH_HOME) == 1)){
+      MyDog.reset();
       if ((mysteps >0) && (digitalRead(SWTCH_HOME) == 1)) 
       {     
          MMklappe1.stepdrive(CLOSE);    
@@ -426,7 +430,8 @@ void loop() {
     //Serial.println(Maschinenstatus, DEC);
   break;
   }
-
+  // Watchdog main loop reset
+  MyDog.reset();
   //Serial.println(Maschinenstatus);
   
     if (robiSaug.readparked() == robiSaug.readnewparkpin())
